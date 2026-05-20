@@ -5,7 +5,7 @@ export default async function Home() {
   let error: string | null = null;
 
   try {
-    const res = await fetch('http://localhost:5000/health');
+    const res = await fetch(`${process.env.BACKEND_URL ?? 'http://localhost:5000'}/health`, { cache: 'no-store' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     health = await res.json();
   } catch (err) {
