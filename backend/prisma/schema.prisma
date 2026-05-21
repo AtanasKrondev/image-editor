@@ -1,0 +1,34 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Image {
+  id                String        @id @default(uuid())
+  filename          String        @unique
+  original_filename String
+  file_path         String
+  size              Int
+  width             Int
+  height            Int
+  format            String
+  created_at        DateTime      @default(now())
+  updated_at        DateTime      @updatedAt
+  editHistory       EditHistory[]
+}
+
+model EditHistory {
+  id         String   @id @default(uuid())
+  image_id   String
+  action     String
+  parameters String
+  sequence   Int
+  created_at DateTime @default(now())
+  image      Image    @relation(fields: [image_id], references: [id], onDelete: Cascade)
+
+  @@index([image_id, sequence])
+}

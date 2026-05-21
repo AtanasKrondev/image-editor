@@ -7,7 +7,8 @@
 - **Framework:** Express.js v5+
 - **Image Processing:** Sharp (latest)
 - **File Upload:** Multer (latest)
-- **Database:** SQLite with Prisma ORM v6+
+- **Database:** SQLite with Prisma ORM v7
+- **SQLite Adapter:** `@prisma/adapter-better-sqlite3` (required by Prisma v7)
 - **Validation:** Zod
 
 ## Structure
@@ -15,9 +16,12 @@
 ```
 backend/
 ├── prisma/
-│   └── schema.prisma
+│   └── schema.prisma            (no url — datasource url lives in prisma.config.ts)
+├── prisma.config.ts             (Prisma v7 config — datasource url, schema path)
 ├── src/
-│   ├── index.ts                 (entry point — runs prisma db push on startup)
+│   ├── index.ts                 (entry point)
+│   ├── generated/               (gitignored — output of prisma generate)
+│   │   └── prisma/
 │   ├── config/
 │   │   ├── database.ts          (Prisma client singleton)
 │   │   └── env.ts               (Zod-validated env config)
@@ -122,6 +126,9 @@ Test setup:
 ## Notes
 
 - Express v5: async errors propagate automatically — no try/catch needed in route handlers
-- Run `prisma db push` automatically on startup (in `index.ts`)
+- Prisma v7: datasource URL lives in `prisma.config.ts`, not `schema.prisma`
+- Prisma v7: generated client goes to `src/generated/prisma/` (gitignored) — import from there, not from `@prisma/client`
+- Prisma v7: `PrismaClient` requires a driver adapter (`PrismaBetterSqlite3`) — cannot be instantiated without one
+- `prisma db push` runs via npm scripts (`dev` and `start`), not in application code
 - Image files stored at `/app/uploads/<uuid>.<ext>` — UUID generated on upload, original name kept in DB
 - Both `/app/uploads` and `/app/data` must be named Docker volumes (not bind mounts) for persistence across restarts
