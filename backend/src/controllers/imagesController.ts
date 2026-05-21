@@ -1,6 +1,23 @@
 import type { Request, Response } from 'express'
 import sharp from 'sharp'
-import { createImage } from '../services/imageRepository.js'
+import { createImage, getAllImages, getImageById } from '../services/imageRepository.js'
+
+export async function getImagePreview(req: Request, res: Response): Promise<void> {
+  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id
+  const image = await getImageById(id)
+  if (!image) {
+    res.status(404).json({ error: 'Image not found' })
+    return
+  }
+  const buffer = await sharp(image.file_path).toBuffer()
+  res.setHeader('Content-Type', `image/${image.format}`)
+  res.send(buffer)
+}
+
+export async function getImages(_req: Request, res: Response): Promise<void> {
+  const images = await getAllImages()
+  res.json(images)
+}
 
 export async function uploadImages(req: Request, res: Response): Promise<void> {
   if (!Array.isArray(req.files) || req.files.length === 0) {

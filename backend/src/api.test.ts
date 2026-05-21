@@ -8,6 +8,61 @@ import { prisma } from './config/database.js'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const fixturePath = path.join(__dirname, '__fixtures__', 'test-image.png')
 
+describe('GET /api/images', () => {
+  afterEach(async () => {
+    await prisma.image.deleteMany()
+  })
+
+  it('returns an empty array when no images exist', async () => {
+    const res = await request(app).get('/api/images')
+
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual([])
+  })
+
+  it('returns all uploaded images', async () => {
+    await request(app)
+      .post('/api/images/upload')
+      .attach('images', fixturePath)
+
+    const res = await request(app).get('/api/images')
+
+    expect(res.status).toBe(200)
+    expect(res.body).toHaveLength(1)
+    expect(res.body[0]).toMatchObject({
+      original_filename: 'test-image.png',
+      width: 100,
+      height: 100,
+      format: 'png',
+    })
+    expect(res.body[0].id).toBeDefined()
+  })
+})
+
+describe('GET /api/images/:id/preview', () => {
+  afterEach(async () => {
+    await prisma.image.deleteMany()
+  })
+
+  it('returns the image binary with correct content-type', async () => {
+    const upload = await request(app)
+      .post('/api/images/upload')
+      .attach('images', fixturePath)
+    const id = upload.body[0].id
+
+    const res = await request(app).get(`/api/images/${id}/preview`)
+
+    expect(res.status).toBe(200)
+    expect(res.headers['content-type']).toMatch(/^image\//)
+  })
+
+  it('returns 404 for an unknown id', async () => {
+    const res = await request(app).get('/api/images/nonexistent/preview')
+
+    expect(res.status).toBe(404)
+  })
+})
+
 describe('POST /api/images/upload', () => {
   afterEach(async () => {
     await prisma.image.deleteMany()

@@ -9,3 +9,11 @@ export type CreateImageData = Omit<
 export async function createImage(data: CreateImageData): Promise<Image> {
   return prisma.image.create({ data })
 }
+
+export async function getAllImages(): Promise<Image[]> {
+  return prisma.image.findMany({ orderBy: { created_at: 'desc' } })
+}
+
+export async function getImageById(id: string): Promise<Image | null> {
+  return prisma.image.findUnique({ where: { id } })
+}
