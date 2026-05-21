@@ -1,10 +1,24 @@
 import type { Request, Response } from 'express';
+import { unlink } from 'fs/promises';
 import sharp from 'sharp';
 import {
   createImage,
+  deleteImageById,
   getAllImages,
   getImageById,
 } from '../services/imageRepository.js';
+
+export async function deleteImage(req: Request, res: Response): Promise<void> {
+  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const image = await getImageById(id);
+  if (!image) {
+    res.status(404).json({ error: 'Image not found' });
+    return;
+  }
+  await deleteImageById(id);
+  await unlink(image.file_path).catch(() => {});
+  res.status(204).send();
+}
 
 export async function getImage(req: Request, res: Response): Promise<void> {
   const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;

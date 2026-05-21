@@ -17,3 +17,7 @@ export async function getAllImages(): Promise<Image[]> {
 export async function getImageById(id: string): Promise<Image | null> {
   return prisma.image.findUnique({ where: { id } })
 }
+
+export async function deleteImageById(id: string): Promise<void> {
+  await prisma.image.delete({ where: { id } })
+}

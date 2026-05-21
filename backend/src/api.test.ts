@@ -67,6 +67,33 @@ describe('GET /api/images/:id', () => {
   });
 });
 
+describe('DELETE /api/images/:id', () => {
+  afterEach(async () => {
+    await prisma.image.deleteMany();
+  });
+
+  it('deletes the image and returns 204', async () => {
+    const upload = await request(app)
+      .post('/api/images/upload')
+      .attach('images', fixturePath);
+    const id = upload.body[0].id;
+
+    const res = await request(app).delete(`/api/images/${id}`);
+
+    expect(res.status).toBe(204);
+    expect(res.body).toEqual({});
+
+    const check = await request(app).get(`/api/images/${id}`);
+    expect(check.status).toBe(404);
+  });
+
+  it('returns 404 for an unknown id', async () => {
+    const res = await request(app).delete('/api/images/nonexistent');
+
+    expect(res.status).toBe(404);
+  });
+});
+
 describe('GET /api/images/:id/preview', () => {
   afterEach(async () => {
     await prisma.image.deleteMany();
