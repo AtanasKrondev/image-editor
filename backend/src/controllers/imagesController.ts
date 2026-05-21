@@ -2,14 +2,43 @@ import type { Request, Response } from 'express';
 import { unlink } from 'fs/promises';
 import sharp from 'sharp';
 import { z } from 'zod';
-
-const formatSchema = z.enum(['jpeg', 'png', 'webp']);
+import { applyHistory } from '../services/imageProcessing.js';
 import {
+  addEditHistory,
   createImage,
   deleteImageById,
   getAllImages,
+  getEditHistory,
   getImageById,
 } from '../services/imageRepository.js';
+import type { EditInput } from '../schemas/editSchemas.js';
+
+const formatSchema = z.enum(['jpeg', 'png', 'webp']);
+
+export async function editImage(req: Request, res: Response): Promise<void> {
+  const { action, parameters } = req.body as EditInput;
+  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
+  const image = await getImageById(id);
+  if (!image) {
+    res.status(404).json({ error: 'Image not found' });
+    return;
+  }
+
+  const history = await getEditHistory(id);
+  await addEditHistory({
+    image_id: id,
+    action,
+    parameters: JSON.stringify(parameters),
+    sequence: history.length + 1,
+  });
+
+  const updatedHistory = await getEditHistory(id);
+  const buffer = await applyHistory(image.file_path, updatedHistory);
+  res.status(201).json({
+    preview: `data:image/${image.format};base64,${buffer.toString('base64')}`,
+  });
+}
 
 export async function downloadImage(
   req: Request,
@@ -31,7 +60,8 @@ export async function downloadImage(
   }
 
   const baseName = image.original_filename.replace(/\.[^.]+$/, '');
-  const buffer = await sharp(image.file_path).toFormat(format).toBuffer();
+  const history = await getEditHistory(id);
+  const buffer = await applyHistory(image.file_path, history, format);
 
   res.setHeader('Content-Type', `image/${format}`);
   res.setHeader(
@@ -74,7 +104,8 @@ export async function getImagePreview(
     res.status(404).json({ error: 'Image not found' });
     return;
   }
-  const buffer = await sharp(image.file_path).toBuffer();
+  const history = await getEditHistory(id);
+  const buffer = await applyHistory(image.file_path, history);
   res.setHeader('Content-Type', `image/${image.format}`);
   res.send(buffer);
 }

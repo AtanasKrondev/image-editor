@@ -166,6 +166,60 @@ describe('GET /api/images/:id/preview', () => {
   });
 });
 
+describe('POST /api/images/:id/edit', () => {
+  afterEach(async () => {
+    await prisma.image.deleteMany();
+  });
+
+  it('applies an edit and returns 201 with a base64 preview', async () => {
+    const upload = await request(app)
+      .post('/api/images/upload')
+      .attach('images', fixturePath);
+    const id = upload.body[0].id;
+
+    const res = await request(app)
+      .post(`/api/images/${id}/edit`)
+      .send({ action: 'blur', parameters: { sigma: 2 } });
+
+    expect(res.status).toBe(201);
+    expect(res.body.preview).toMatch(/^data:image\//);
+  });
+
+  it('returns 400 for an invalid action', async () => {
+    const upload = await request(app)
+      .post('/api/images/upload')
+      .attach('images', fixturePath);
+    const id = upload.body[0].id;
+
+    const res = await request(app)
+      .post(`/api/images/${id}/edit`)
+      .send({ action: 'explode', parameters: {} });
+
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 400 for missing required parameters', async () => {
+    const upload = await request(app)
+      .post('/api/images/upload')
+      .attach('images', fixturePath);
+    const id = upload.body[0].id;
+
+    const res = await request(app)
+      .post(`/api/images/${id}/edit`)
+      .send({ action: 'crop', parameters: {} });
+
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 404 for an unknown id', async () => {
+    const res = await request(app)
+      .post('/api/images/nonexistent/edit')
+      .send({ action: 'blur', parameters: { sigma: 2 } });
+
+    expect(res.status).toBe(404);
+  });
+});
+
 describe('POST /api/images/upload', () => {
   afterEach(async () => {
     await prisma.image.deleteMany();
