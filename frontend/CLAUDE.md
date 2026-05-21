@@ -12,7 +12,7 @@ This Next.js version may contain breaking changes. APIs, conventions, and file s
 - **Framework:** Next.js v15+ (App Router)
 - **Styling:** Tailwind CSS v4 (CSS-based config), ShadcnUI
 - **State Management:** React Context (undo/redo)
-- **HTTP Client:** Fetch API
+- **HTTP Client:** Fetch API + SWR (data fetching / cache revalidation)
 
 ## Structure
 
