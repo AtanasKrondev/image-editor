@@ -65,3 +65,4 @@ No component tests — UI is verified manually. Only the hook contains pure logi
 - All routing uses the `app/` directory (App Router)
 - React Context is sufficient for undo/redo state at this scope
 - Import alias `@/*` resolves to `src/*`
+- **`page.tsx` is a server component** — do NOT add `'use client'` to route files. Use separate client components for interactive features (e.g., state, event handlers). Import and compose them in `page.tsx`.

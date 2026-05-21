@@ -10,7 +10,11 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export default function ImageLibrary() {
+export default function ImageLibrary({
+  onSelect,
+}: {
+  onSelect?: (image: ImageType) => void;
+}) {
   const {
     data: images,
     error,
@@ -51,7 +55,8 @@ export default function ImageLibrary() {
       {images.map((img) => (
         <div
           key={img.id}
-          className="rounded-lg border border-gray-200 overflow-hidden bg-white"
+          className="rounded-lg border border-gray-200 overflow-hidden bg-white cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => onSelect?.(img)}
         >
           <div className="aspect-square bg-gray-50 overflow-hidden">
             <img
