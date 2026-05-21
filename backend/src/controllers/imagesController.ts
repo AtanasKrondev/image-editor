@@ -1,12 +1,45 @@
 import type { Request, Response } from 'express';
 import { unlink } from 'fs/promises';
 import sharp from 'sharp';
+import { z } from 'zod';
+
+const formatSchema = z.enum(['jpeg', 'png', 'webp']);
 import {
   createImage,
   deleteImageById,
   getAllImages,
   getImageById,
 } from '../services/imageRepository.js';
+
+export async function downloadImage(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
+  const parsed = formatSchema.safeParse(req.query.format ?? 'jpeg');
+  if (!parsed.success) {
+    res.status(400).json({ error: 'format must be jpeg, png, or webp' });
+    return;
+  }
+  const format = parsed.data;
+
+  const image = await getImageById(id);
+  if (!image) {
+    res.status(404).json({ error: 'Image not found' });
+    return;
+  }
+
+  const baseName = image.original_filename.replace(/\.[^.]+$/, '');
+  const buffer = await sharp(image.file_path).toFormat(format).toBuffer();
+
+  res.setHeader('Content-Type', `image/${format}`);
+  res.setHeader(
+    'Content-Disposition',
+    `attachment; filename="${baseName}.${format}"`,
+  );
+  res.send(buffer);
+}
 
 export async function deleteImage(req: Request, res: Response): Promise<void> {
   const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;

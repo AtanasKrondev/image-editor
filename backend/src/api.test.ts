@@ -94,6 +94,54 @@ describe('DELETE /api/images/:id', () => {
   });
 });
 
+describe('GET /api/images/:id/download', () => {
+  afterEach(async () => {
+    await prisma.image.deleteMany();
+  });
+
+  it('downloads as jpeg by default', async () => {
+    const upload = await request(app)
+      .post('/api/images/upload')
+      .attach('images', fixturePath);
+    const id = upload.body[0].id;
+
+    const res = await request(app).get(`/api/images/${id}/download`);
+
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toMatch(/^image\/jpeg/);
+    expect(res.headers['content-disposition']).toMatch(/attachment/);
+  });
+
+  it('downloads in the requested format', async () => {
+    const upload = await request(app)
+      .post('/api/images/upload')
+      .attach('images', fixturePath);
+    const id = upload.body[0].id;
+
+    const res = await request(app).get(`/api/images/${id}/download?format=png`);
+
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toMatch(/^image\/png/);
+  });
+
+  it('returns 400 for an unsupported format', async () => {
+    const upload = await request(app)
+      .post('/api/images/upload')
+      .attach('images', fixturePath);
+    const id = upload.body[0].id;
+
+    const res = await request(app).get(`/api/images/${id}/download?format=bmp`);
+
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 404 for an unknown id', async () => {
+    const res = await request(app).get('/api/images/nonexistent/download');
+
+    expect(res.status).toBe(404);
+  });
+});
+
 describe('GET /api/images/:id/preview', () => {
   afterEach(async () => {
     await prisma.image.deleteMany();
