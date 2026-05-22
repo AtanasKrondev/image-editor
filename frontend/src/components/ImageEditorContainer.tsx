@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import useSWR from 'swr';
 import useSWRMutation from 'swr/mutation';
-import { fetchImages, editImage, IMAGES_KEY } from '@/services/api';
+import { fetchImages, editImage, deleteImage, IMAGES_KEY } from '@/services/api';
 import ImageLibrary from '@/components/ImageLibrary';
 import ImagePreview, { type ImagePreviewHandle } from '@/components/ImagePreview';
 import ToolPanel from '@/components/ToolPanel';
@@ -76,6 +76,13 @@ export default function ImageEditorContainer() {
     setPendingEdit(null);
   }
 
+  async function handleDelete() {
+    if (!displayedImage) return;
+    await deleteImage(displayedImage.id);
+    setSelectedId(null);
+    mutate();
+  }
+
   async function handleUndo() {
     await undo();
   }
@@ -131,6 +138,7 @@ export default function ImageEditorContainer() {
           isMutating={isMutating}
           hasPendingChanges={hasPendingChanges}
           onApply={() => void imagePreviewRef.current?.handleApply()}
+          onDelete={() => void handleDelete()}
           onChange={setPendingEdit}
         />
       </div>

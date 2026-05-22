@@ -37,6 +37,11 @@ export async function fetchHistory(id: string): Promise<EditHistoryEntry[]> {
   return res.json()
 }
 
+export async function deleteImage(id: string): Promise<void> {
+  const res = await fetch(`${BASE}/images/${id}`, { method: 'DELETE' })
+  if (!res.ok) throw new Error('Delete failed')
+}
+
 export async function deleteLastHistory(id: string): Promise<EditHistoryEntry> {
   const res = await fetch(`${BASE}/images/${id}/history/last`, { method: 'DELETE' })
   if (!res.ok) throw new Error('Undo failed')

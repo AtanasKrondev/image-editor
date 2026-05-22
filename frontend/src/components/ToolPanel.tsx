@@ -16,6 +16,7 @@ import {
   Crop,
   Check,
   Download,
+  Trash2,
 } from 'lucide-react';
 import { getDownloadUrl } from '@/services/api';
 import { buttonVariants } from '@/components/ui/button';
@@ -36,6 +37,7 @@ export default function ToolPanel({
   isMutating,
   hasPendingChanges,
   onApply,
+  onDelete,
   onChange,
 }: {
   image: Image | null;
@@ -43,6 +45,7 @@ export default function ToolPanel({
   isMutating?: boolean;
   hasPendingChanges: boolean;
   onApply: () => void;
+  onDelete: () => void;
   onChange: (edit: PendingEdit) => void;
 }) {
   const [activeTool, setActiveTool] = useState<ToolName | null>(null);
@@ -138,15 +141,15 @@ export default function ToolPanel({
             {label}
           </Button>
         ))}
+        <Button
+          size="sm"
+          disabled={!hasPendingChanges || isMutating}
+          onClick={onApply}
+        >
+          <Check className="size-4" />
+          Apply
+        </Button>
         <div className="ml-auto flex gap-1">
-          <Button
-            size="sm"
-            disabled={!hasPendingChanges || isMutating}
-            onClick={onApply}
-          >
-            <Check className="size-4" />
-            Apply
-          </Button>
           {image && (
             <a
               href={getDownloadUrl(image.id)}
@@ -157,6 +160,17 @@ export default function ToolPanel({
               Download
             </a>
           )}
+          <Button
+            variant="destructive"
+            size="sm"
+            disabled={!image}
+            onClick={() => {
+              if (window.confirm('Delete this image and all its history?')) onDelete();
+            }}
+          >
+            <Trash2 className="size-4" />
+            Delete
+          </Button>
         </div>
       </div>
 
