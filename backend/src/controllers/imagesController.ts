@@ -7,6 +7,7 @@ import {
   addEditHistory,
   createImage,
   deleteImageById,
+  deleteLastEditHistory,
   getAllImages,
   getEditHistory,
   getImageById,
@@ -113,6 +114,32 @@ export async function getImagePreview(
 export async function getImages(_req: Request, res: Response): Promise<void> {
   const images = await getAllImages();
   res.json(images);
+}
+
+export async function getImageHistory(req: Request, res: Response): Promise<void> {
+  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const image = await getImageById(id);
+  if (!image) {
+    res.status(404).json({ error: 'Image not found' });
+    return;
+  }
+  const history = await getEditHistory(id);
+  res.json(history);
+}
+
+export async function undoLastEdit(req: Request, res: Response): Promise<void> {
+  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const image = await getImageById(id);
+  if (!image) {
+    res.status(404).json({ error: 'Image not found' });
+    return;
+  }
+  const deleted = await deleteLastEditHistory(id);
+  if (!deleted) {
+    res.status(404).json({ error: 'No history to undo' });
+    return;
+  }
+  res.json(deleted);
 }
 
 export async function uploadImages(req: Request, res: Response): Promise<void> {

@@ -37,3 +37,13 @@ export async function addEditHistory(data: {
 }): Promise<EditHistory> {
   return prisma.editHistory.create({ data })
 }
+
+export async function deleteLastEditHistory(imageId: string): Promise<EditHistory | null> {
+  const last = await prisma.editHistory.findFirst({
+    where: { image_id: imageId },
+    orderBy: { sequence: 'desc' },
+  })
+  if (!last) return null
+  await prisma.editHistory.delete({ where: { id: last.id } })
+  return last
+}
