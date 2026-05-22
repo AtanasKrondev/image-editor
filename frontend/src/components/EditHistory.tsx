@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Undo2, Redo2 } from 'lucide-react';
+import { Undo2, Redo2, Check, X } from 'lucide-react';
 import type { EditHistoryEntry } from '@/types';
 
 function abbrev(action: string, parameters: string): string {
@@ -27,8 +27,11 @@ export default function EditHistory({
   canRedo,
   isUndoing,
   isRedoing,
+  pendingUndoRedo,
   onUndo,
   onRedo,
+  onApplyUndoRedo,
+  onCancelUndoRedo,
 }: {
   history: EditHistoryEntry[];
   redoStack: EditHistoryEntry[];
@@ -36,33 +39,62 @@ export default function EditHistory({
   canRedo: boolean;
   isUndoing: boolean;
   isRedoing: boolean;
+  pendingUndoRedo: 'undo' | 'redo' | null;
   onUndo: () => void;
   onRedo: () => void;
+  onApplyUndoRedo: () => void;
+  onCancelUndoRedo: () => void;
 }) {
+  const busy = isUndoing || isRedoing;
+  const hasPending = pendingUndoRedo !== null;
   const hasItems = history.length > 0 || redoStack.length > 0;
 
   return (
     <div className="flex items-center gap-2 px-2 py-1 border rounded-lg bg-background">
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={!canUndo || isUndoing || isRedoing}
-        onClick={onUndo}
-        title="Undo (Ctrl+Z)"
-      >
-        <Undo2 className="size-4" />
-        Undo
-      </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={!canRedo || isUndoing || isRedoing}
-        onClick={onRedo}
-        title="Redo (Ctrl+Y)"
-      >
-        <Redo2 className="size-4" />
-        Redo
-      </Button>
+      {hasPending ? (
+        <>
+          <Button
+            size="sm"
+            onClick={onApplyUndoRedo}
+            disabled={busy}
+          >
+            <Check className="size-4" />
+            Apply
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onCancelUndoRedo}
+            disabled={busy}
+          >
+            <X className="size-4" />
+            Cancel
+          </Button>
+        </>
+      ) : (
+        <>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!canUndo || busy}
+            onClick={onUndo}
+            title="Undo (Ctrl+Z)"
+          >
+            <Undo2 className="size-4" />
+            Undo
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!canRedo || busy}
+            onClick={onRedo}
+            title="Redo (Ctrl+Y)"
+          >
+            <Redo2 className="size-4" />
+            Redo
+          </Button>
+        </>
+      )}
 
       {hasItems ? (
         <ScrollArea className="flex-1">

@@ -26,6 +26,7 @@ export default function ImageEditorContainer() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [previewVersions, setPreviewVersions] = useState<Record<string, number>>({});
   const [pendingEdit, setPendingEdit] = useState<PendingEdit>(null);
+  const [pendingUndoRedo, setPendingUndoRedo] = useState<'undo' | 'redo' | null>(null);
   const { data: images, isLoading, mutate } = useSWR<Image[]>(IMAGES_KEY, fetchImages);
 
   const displayedImage =
@@ -35,14 +36,11 @@ export default function ImageEditorContainer() {
 
   useEffect(() => {
     setPendingEdit(null);
+    setPendingUndoRedo(null);
   }, [displayedImage?.id]);
 
-  const bumpPreview = () => {
-    if (!displayedImage) return;
-    setPreviewVersions((prev) => ({
-      ...prev,
-      [displayedImage.id]: (prev[displayedImage.id] ?? 0) + 1,
-    }));
+  const bumpPreview = (id: string) => {
+    setPreviewVersions((prev) => ({ ...prev, [id]: (prev[id] ?? 0) + 1 }));
   };
 
   const {
@@ -56,7 +54,10 @@ export default function ImageEditorContainer() {
     redo,
     clearRedo,
     refetch: refetchHistory,
-  } = useEditHistory(displayedImage?.id ?? null, bumpPreview);
+  } = useEditHistory(
+    displayedImage?.id ?? null,
+    () => { if (displayedImage) bumpPreview(displayedImage.id); }
+  );
 
   const { trigger, isMutating } = useSWRMutation(
     displayedImage?.id ?? null,
@@ -72,26 +73,47 @@ export default function ImageEditorContainer() {
     clearRedo();
     mutate();
     refetchHistory();
-    setPreviewVersions((prev) => ({ ...prev, [imageId]: (prev[imageId] ?? 0) + 1 }));
+    bumpPreview(imageId);
     setPendingEdit(null);
+  }
+
+  async function handleUndo() {
+    await undo();
+    setPendingUndoRedo('undo');
+  }
+
+  async function handleRedo() {
+    await redo();
+    setPendingUndoRedo('redo');
+  }
+
+  function handleApplyUndoRedo() {
+    setPendingUndoRedo(null);
+  }
+
+  async function handleCancelUndoRedo() {
+    if (pendingUndoRedo === 'undo') await redo();
+    else if (pendingUndoRedo === 'redo') await undo();
+    setPendingUndoRedo(null);
   }
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       const tag = (e.target as HTMLElement).tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (pendingUndoRedo) return;
       if (e.ctrlKey && !e.shiftKey && e.key === 'z') {
         e.preventDefault();
-        if (canUndo) void undo();
+        if (canUndo) void handleUndo();
       }
       if (e.ctrlKey && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) {
         e.preventDefault();
-        if (canRedo) void redo();
+        if (canRedo) void handleRedo();
       }
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [canUndo, canRedo, undo, redo]);
+  }, [canUndo, canRedo, pendingUndoRedo, handleUndo, handleRedo]);
 
   return (
     <div className="flex flex-col gap-1 h-full">
@@ -102,6 +124,7 @@ export default function ImageEditorContainer() {
           isLoading={isLoading}
           pendingEdit={pendingEdit}
           isMutating={isMutating}
+          version={previewVersions[displayedImage?.id ?? ''] ?? 0}
           onApply={handleApply}
         />
       </div>
@@ -121,8 +144,11 @@ export default function ImageEditorContainer() {
           canRedo={canRedo}
           isUndoing={isUndoing}
           isRedoing={isRedoing}
-          onUndo={() => void undo()}
-          onRedo={() => void redo()}
+          pendingUndoRedo={pendingUndoRedo}
+          onUndo={() => void handleUndo()}
+          onRedo={() => void handleRedo()}
+          onApplyUndoRedo={handleApplyUndoRedo}
+          onCancelUndoRedo={() => void handleCancelUndoRedo()}
         />
       </div>
       <div className="h-[100px]">
