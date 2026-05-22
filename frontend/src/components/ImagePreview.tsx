@@ -39,16 +39,25 @@ export default function ImagePreview({
   isLoading,
   pendingEdit,
   isMutating,
+  version = 0,
   onApply,
 }: {
   image: Image | null;
   isLoading?: boolean;
   pendingEdit: PendingEdit;
   isMutating?: boolean;
+  version?: number;
   onApply?: (imageId: string, resolved: PendingEdit) => void;
 }) {
   const [cacheKey, setCacheKey] = useState(0);
   const [waitingForReload, setWaitingForReload] = useState(false);
+
+  // Bump cacheKey whenever version changes (driven by parent after apply/undo/redo)
+  const [prevVersion, setPrevVersion] = useState(version);
+  if (prevVersion !== version) {
+    setPrevVersion(version);
+    setCacheKey((k) => k + 1);
+  }
   const [cropRect, setCropRect] = useState<Crop>({ unit: '%', x: 0, y: 0, width: 50, height: 50 });
   const imgRef = useRef<HTMLImageElement>(null);
 
@@ -81,7 +90,6 @@ export default function ImagePreview({
     }
 
     setWaitingForReload(true);
-    setCacheKey((k) => k + 1);
     onApply?.(image.id, resolved);
   }
 
