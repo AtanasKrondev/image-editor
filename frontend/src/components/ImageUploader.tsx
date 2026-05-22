@@ -9,7 +9,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { AlertCircleIcon, UploadIcon, XIcon } from 'lucide-react';
 
-export default function ImageUploader() {
+export default function ImageUploader({
+  onComplete,
+}: {
+  onComplete?: () => void;
+} = {}) {
   const { mutate } = useSWRConfig();
   const inputRef = useRef<HTMLInputElement>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -32,6 +36,7 @@ export default function ImageUploader() {
       mutate(IMAGES_KEY);
       setSelectedFiles([]);
       if (inputRef.current) inputRef.current.value = '';
+      onComplete?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed');
     } finally {
@@ -104,34 +109,24 @@ export default function ImageUploader() {
 
       {selectedFiles.length > 0 && (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          <div className="flex flex-wrap gap-4">
             {selectedFiles.map((file, index) => (
-              <Card key={index} className="overflow-hidden">
-                <div className="relative aspect-square overflow-hidden bg-muted">
-                  <img
-                    src={URL.createObjectURL(file)}
-                    alt={file.name}
-                    className="w-full h-full object-cover"
-                  />
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    onClick={() => removeFile(index)}
-                    disabled={uploading}
-                    className="absolute top-1 right-1 size-6"
-                  >
-                    <XIcon className="size-4" />
-                  </Button>
-                </div>
-                <CardContent className="p-2">
-                  <p className="text-xs font-medium truncate" title={file.name}>
-                    {file.name}
-                  </p>
-                  <Badge variant="secondary" className="mt-1">
-                    {(file.size / 1024 / 1024).toFixed(1)} MB
-                  </Badge>
-                </CardContent>
-              </Card>
+              <div key={index} className="relative w-[100px] h-[100px] rounded-lg border border-border overflow-hidden bg-muted">
+                <img
+                  src={URL.createObjectURL(file)}
+                  alt={file.name}
+                  className="w-full h-full object-cover"
+                />
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  onClick={() => removeFile(index)}
+                  disabled={uploading}
+                  className="absolute top-1 right-1 size-6"
+                >
+                  <XIcon className="size-4" />
+                </Button>
+              </div>
             ))}
           </div>
 

@@ -1,84 +1,111 @@
 'use client';
 
+import { useState } from 'react';
 import useSWR from 'swr';
 import { fetchImages, getPreviewUrl, IMAGES_KEY } from '@/services/api';
-import type { Image as ImageType } from '@/types';
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
+import ImageUploader from '@/components/ImageUploader';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Card, CardContent } from '@/components/ui/card';
+import { AlertCircleIcon, UploadIcon } from 'lucide-react';
+import type { Image } from '@/types';
 
 export default function ImageLibrary({
   onSelect,
 }: {
-  onSelect?: (image: ImageType) => void;
+  onSelect?: (image: Image) => void;
 }) {
+  const [uploadOpen, setUploadOpen] = useState(false);
   const {
     data: images,
     error,
     isLoading,
-  } = useSWR<ImageType[]>(IMAGES_KEY, fetchImages);
-
-  if (isLoading) {
-    return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-6">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div
-            key={i}
-            className="aspect-square bg-gray-100 rounded-lg animate-pulse"
-          />
-        ))}
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <p className="text-red-500 mt-6 text-sm">
-        Failed to load images: {error.message}
-      </p>
-    );
-  }
-
-  if (!images || images.length === 0) {
-    return (
-      <p className="text-gray-400 mt-6 text-center">
-        No images yet. Upload some above.
-      </p>
-    );
-  }
+  } = useSWR<Image[]>(IMAGES_KEY, fetchImages);
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-6">
-      {images.map((img) => (
-        <div
-          key={img.id}
-          className="rounded-lg border border-gray-200 overflow-hidden bg-white cursor-pointer hover:shadow-lg transition-shadow"
-          onClick={() => onSelect?.(img)}
-        >
-          <div className="aspect-square bg-gray-50 overflow-hidden">
-            <img
-              src={getPreviewUrl(img.id)}
-              alt={img.original_filename}
-              className="w-full h-full object-cover"
-            />
+    <>
+      <div>
+        {isLoading && (
+          <ScrollArea className="w-full">
+            <div className="flex gap-4 pr-8 pb-4">
+              <div
+                className="w-[100px] h-[100px] rounded-lg border border-dashed border-border overflow-hidden bg-muted/30 flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors flex-shrink-0"
+                onClick={() => setUploadOpen(true)}
+              >
+                <UploadIcon className="size-6 text-muted-foreground" />
+              </div>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton
+                  key={i}
+                  className="w-[100px] h-[100px] rounded-lg flex-shrink-0"
+                />
+              ))}
+            </div>
+          </ScrollArea>
+        )}
+
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircleIcon className="size-4" />
+            <AlertDescription>
+              Failed to load images: {error.message}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {!isLoading && !error && (!images || images.length === 0) && (
+          <p className="text-muted-foreground text-center py-8">
+            No images yet. Click above to upload.
+          </p>
+        )}
+
+        {!isLoading && images && images.length > 0 && (
+          <ScrollArea className="w-full">
+            <div className="flex gap-4 pr-8 pb-4">
+              <div
+                className="w-[100px] h-[100px] rounded-lg border border-dashed border-border overflow-hidden bg-muted/30 flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors flex-shrink-0"
+                onClick={() => setUploadOpen(true)}
+              >
+                <UploadIcon className="size-6 text-muted-foreground" />
+              </div>
+              {images.map((img) => (
+                <div
+                  key={img.id}
+                  onClick={() => onSelect?.(img)}
+                  className="w-[100px] h-[100px] rounded-lg border border-border overflow-hidden bg-muted hover:shadow-lg transition-shadow cursor-pointer flex-shrink-0"
+                >
+                  <img
+                    src={getPreviewUrl(img.id)}
+                    alt={img.original_filename}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        )}
+      </div>
+
+      <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
+        <DialogContent className="!w-[calc(100vw-10px)] !sm:w-[calc(100vw-80px)] !h-[calc(100vh-10px)] !sm:h-[calc(100vh-40px)] !max-w-none flex flex-col p-0">
+          <div className="p-6 border-b">
+            <DialogHeader>
+              <DialogTitle>Upload Images</DialogTitle>
+            </DialogHeader>
           </div>
-          <div className="p-2">
-            <p
-              className="text-xs font-medium truncate"
-              title={img.original_filename}
-            >
-              {img.original_filename}
-            </p>
-            <p className="text-xs text-gray-400">
-              {img.width}x{img.height} · {img.format.toUpperCase()} ·{' '}
-              {formatBytes(img.size)}
-            </p>
+          <div className="flex-1 overflow-y-auto p-6">
+            <ImageUploader onComplete={() => setUploadOpen(false)} />
           </div>
-        </div>
-      ))}
-    </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

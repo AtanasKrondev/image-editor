@@ -1,10 +1,9 @@
-import ImageEditorClient from '@/components/ImageEditorClient';
+import ImageEditorContainer from '@/components/ImageEditorContainer';
 
 export default function Home() {
   return (
-    <main className="max-w-5xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-semibold mb-6">Image Editor</h1>
-      <ImageEditorClient />
+    <main className="p-4 pt-0 h-screen">
+      <ImageEditorContainer />
     </main>
   );
 }
