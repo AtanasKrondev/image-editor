@@ -111,12 +111,14 @@ const ImagePreview = forwardRef<
 
   return (
     <div className="h-full">
-      {isLoading && <Skeleton className="w-full aspect-video rounded-lg" />}
+      {isLoading && (
+        <Skeleton className="w-full h-full flex flex-col justify-center gap-2 rounded-lg" />
+      )}
 
       {!isLoading && !image && (
-        <div className="flex items-center justify-center bg-muted rounded-lg aspect-video">
+        <div className="h-full flex flex-col justify-center gap-2">
           <p className="text-muted-foreground text-center">
-            No image selected. Upload or select an image from the library below.
+            No images. Upload an image from the button below.
           </p>
         </div>
       )}

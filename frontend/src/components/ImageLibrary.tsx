@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import useSWR from 'swr';
-import { fetchImages, getPreviewUrl, IMAGES_KEY } from '@/services/api';
+import { fetchImages, IMAGES_KEY } from '@/services/api';
 import ImageUploader from '@/components/ImageUploader';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -33,64 +33,52 @@ export default function ImageLibrary({
 
   return (
     <>
-      <div>
-        {isLoading && (
-          <ScrollArea className="w-full">
-            <div className="flex gap-4 pr-8 pb-4">
+      <ScrollArea className="w-full">
+        <div className="flex gap-4 pr-8 pb-4">
+          {!isLoading && !error && (
+            <div
+              className="w-[100px] h-[100px] rounded-lg border border-dashed border-border overflow-hidden bg-muted/30 flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors flex-shrink-0"
+              onClick={() => setUploadOpen(true)}
+            >
+              <UploadIcon className="size-6 text-muted-foreground" />
+            </div>
+          )}
+
+          {isLoading &&
+            Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton
+                key={i}
+                className="w-[100px] h-[100px] rounded-lg flex-shrink-0"
+              />
+            ))}
+
+          {!isLoading &&
+            images &&
+            images.map((img) => (
               <div
-                className="w-[100px] h-[100px] rounded-lg border border-dashed border-border overflow-hidden bg-muted/30 flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors flex-shrink-0"
-                onClick={() => setUploadOpen(true)}
+                key={img.id}
+                onClick={() => onSelect?.(img)}
+                className="w-[100px] h-[100px] rounded-lg border border-border overflow-hidden bg-muted hover:shadow-lg transition-shadow cursor-pointer flex-shrink-0"
               >
-                <UploadIcon className="size-6 text-muted-foreground" />
-              </div>
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton
-                  key={i}
-                  className="w-[100px] h-[100px] rounded-lg flex-shrink-0"
+                <ImageThumbnail
+                  id={img.id}
+                  alt={img.original_filename}
+                  version={previewVersions?.[img.id]}
                 />
-              ))}
-            </div>
-          </ScrollArea>
-        )}
-
-        {error && (
-          <Alert variant="destructive">
-            <AlertCircleIcon className="size-4" />
-            <AlertDescription>
-              Failed to load images: {error.message}
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {!isLoading && !error && (!images || images.length === 0) && (
-          <p className="text-muted-foreground text-center py-8">
-            No images yet. Click above to upload.
-          </p>
-        )}
-
-        {!isLoading && images && images.length > 0 && (
-          <ScrollArea className="w-full">
-            <div className="flex gap-4 pr-8 pb-4">
-              <div
-                className="w-[100px] h-[100px] rounded-lg border border-dashed border-border overflow-hidden bg-muted/30 flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors flex-shrink-0"
-                onClick={() => setUploadOpen(true)}
-              >
-                <UploadIcon className="size-6 text-muted-foreground" />
               </div>
-              {images.map((img) => (
-                <div
-                  key={img.id}
-                  onClick={() => onSelect?.(img)}
-                  className="w-[100px] h-[100px] rounded-lg border border-border overflow-hidden bg-muted hover:shadow-lg transition-shadow cursor-pointer flex-shrink-0"
-                >
-                  <ImageThumbnail id={img.id} alt={img.original_filename} version={previewVersions?.[img.id]} />
-                </div>
-              ))}
-            </div>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
-        )}
-      </div>
+            ))}
+
+          {!isLoading && error && (
+            <Alert variant="destructive" className="w-[300px] h-[100px]">
+              <AlertCircleIcon className="size-4" />
+              <AlertDescription>
+                Failed to load images: {error.message}
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
 
       <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
         <DialogContent className="!w-[calc(100vw-10px)] !sm:w-[calc(100vw-80px)] !h-[calc(100vh-10px)] !sm:h-[calc(100vh-40px)] !max-w-none flex flex-col p-0">
