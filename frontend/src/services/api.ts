@@ -18,6 +18,10 @@ export async function uploadImages(files: File[]): Promise<Image[]> {
   return res.json()
 }
 
+export function getDownloadUrl(id: string, format: 'jpeg' | 'png' | 'webp' = 'jpeg'): string {
+  return `${BASE}/images/${id}/download?format=${format}`
+}
+
 export function getPreviewUrl(id: string, cacheBuster?: number): string {
   const url = `${BASE}/images/${id}/preview`
   return cacheBuster !== undefined ? `${url}?t=${cacheBuster}` : url

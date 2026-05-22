@@ -3,9 +3,10 @@
 import { useState, useRef } from 'react';
 import ReactCrop, { type Crop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
-import { getPreviewUrl } from '@/services/api';
+import { getPreviewUrl, getDownloadUrl } from '@/services/api';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Download } from 'lucide-react';
 import type { Image, PendingEdit } from '@/types';
 
 function formatBytes(bytes: number): string {
@@ -153,6 +154,14 @@ export default function ImagePreview({
             >
               {isMutating || waitingForReload ? 'Applying…' : 'Apply'}
             </Button>
+            <a
+              href={getDownloadUrl(image.id)}
+              download
+              className={buttonVariants({ variant: 'outline', size: 'sm' })}
+            >
+              <Download className="size-4" />
+              Download
+            </a>
           </div>
         </div>
       )}
