@@ -128,3 +128,11 @@ image-editor/
 ```
 
 Data is persisted in named Docker volumes (`uploads` for image files, `data` for the SQLite database) so it survives container restarts.
+
+---
+
+## Known Issues
+
+- **Sharpen** — the preview does not accurately reflect the final output; the downloaded image may look different from what is shown.
+- **Crop** — currently not working.
+- **Resize** — aspect ratio is not enforced; width and height are set independently. If the computed dimension is a non-integer, the result is rounded down and the image is cropped to fit, which may cut off pixels.
