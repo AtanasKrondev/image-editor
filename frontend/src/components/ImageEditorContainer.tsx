@@ -26,7 +26,6 @@ export default function ImageEditorContainer() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [previewVersions, setPreviewVersions] = useState<Record<string, number>>({});
   const [pendingEdit, setPendingEdit] = useState<PendingEdit>(null);
-  const [pendingUndoRedo, setPendingUndoRedo] = useState<'undo' | 'redo' | null>(null);
   const { data: images, isLoading, mutate } = useSWR<Image[]>(IMAGES_KEY, fetchImages);
 
   const displayedImage =
@@ -36,7 +35,6 @@ export default function ImageEditorContainer() {
 
   useEffect(() => {
     setPendingEdit(null);
-    setPendingUndoRedo(null);
   }, [displayedImage?.id]);
 
   const bumpPreview = (id: string) => {
@@ -79,22 +77,10 @@ export default function ImageEditorContainer() {
 
   async function handleUndo() {
     await undo();
-    setPendingUndoRedo('undo');
   }
 
   async function handleRedo() {
     await redo();
-    setPendingUndoRedo('redo');
-  }
-
-  function handleApplyUndoRedo() {
-    setPendingUndoRedo(null);
-  }
-
-  async function handleCancelUndoRedo() {
-    if (pendingUndoRedo === 'undo') await redo();
-    else if (pendingUndoRedo === 'redo') await undo();
-    setPendingUndoRedo(null);
   }
 
   useEffect(() => {
@@ -143,11 +129,8 @@ export default function ImageEditorContainer() {
           canRedo={canRedo}
           isUndoing={isUndoing}
           isRedoing={isRedoing}
-          pendingUndoRedo={pendingUndoRedo}
           onUndo={() => void handleUndo()}
           onRedo={() => void handleRedo()}
-          onApplyUndoRedo={handleApplyUndoRedo}
-          onCancelUndoRedo={() => void handleCancelUndoRedo()}
         />
       </div>
       <div className="h-[100px]">
