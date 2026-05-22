@@ -51,50 +51,43 @@ export default function EditHistory({
 
   return (
     <div className="flex items-center gap-2 px-2 py-1 border rounded-lg bg-background">
-      {hasPending ? (
-        <>
-          <Button
-            size="sm"
-            onClick={onApplyUndoRedo}
-            disabled={busy}
-          >
-            <Check className="size-4" />
-            Apply
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onCancelUndoRedo}
-            disabled={busy}
-          >
-            <X className="size-4" />
-            Cancel
-          </Button>
-        </>
-      ) : (
-        <>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={!canUndo || busy}
-            onClick={onUndo}
-            title="Undo (Ctrl+Z)"
-          >
-            <Undo2 className="size-4" />
-            Undo
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={!canRedo || busy}
-            onClick={onRedo}
-            title="Redo (Ctrl+Y)"
-          >
-            <Redo2 className="size-4" />
-            Redo
-          </Button>
-        </>
-      )}
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={!canUndo || busy || hasPending}
+        onClick={onUndo}
+        title="Undo (Ctrl+Z)"
+      >
+        <Undo2 className="size-4" />
+        Undo
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={!canRedo || busy || hasPending}
+        onClick={onRedo}
+        title="Redo (Ctrl+Y)"
+      >
+        <Redo2 className="size-4" />
+        Redo
+      </Button>
+      <Button
+        size="sm"
+        disabled={!hasPending || busy}
+        onClick={onApplyUndoRedo}
+      >
+        <Check className="size-4" />
+        Apply
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={!hasPending || busy}
+        onClick={onCancelUndoRedo}
+      >
+        <X className="size-4" />
+        Cancel
+      </Button>
 
       {hasItems ? (
         <ScrollArea className="flex-1">
