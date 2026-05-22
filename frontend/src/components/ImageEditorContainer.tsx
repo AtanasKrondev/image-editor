@@ -7,6 +7,8 @@ import { fetchImages, editImage, IMAGES_KEY } from '@/services/api';
 import ImageLibrary from '@/components/ImageLibrary';
 import ImagePreview from '@/components/ImagePreview';
 import ToolPanel from '@/components/ToolPanel';
+import EditHistory from '@/components/EditHistory';
+import { useEditHistory } from '@/hooks/useEditHistory';
 import type { Image, PendingEdit } from '@/types';
 
 function toApiArgs(edit: NonNullable<PendingEdit>) {
@@ -35,6 +37,27 @@ export default function ImageEditorContainer() {
     setPendingEdit(null);
   }, [displayedImage?.id]);
 
+  const bumpPreview = () => {
+    if (!displayedImage) return;
+    setPreviewVersions((prev) => ({
+      ...prev,
+      [displayedImage.id]: (prev[displayedImage.id] ?? 0) + 1,
+    }));
+  };
+
+  const {
+    history,
+    redoStack,
+    canUndo,
+    canRedo,
+    isUndoing,
+    isRedoing,
+    undo,
+    redo,
+    clearRedo,
+    refetch: refetchHistory,
+  } = useEditHistory(displayedImage?.id ?? null, bumpPreview);
+
   const { trigger, isMutating } = useSWRMutation(
     displayedImage?.id ?? null,
     async (id: string, { arg }: { arg: { action: string; parameters: Record<string, unknown> } }) => {
@@ -46,10 +69,29 @@ export default function ImageEditorContainer() {
     if (!resolved) return;
     const { action, parameters } = toApiArgs(resolved);
     await trigger({ action, parameters });
+    clearRedo();
     mutate();
+    refetchHistory();
     setPreviewVersions((prev) => ({ ...prev, [imageId]: (prev[imageId] ?? 0) + 1 }));
     setPendingEdit(null);
   }
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (e.ctrlKey && !e.shiftKey && e.key === 'z') {
+        e.preventDefault();
+        if (canUndo) void undo();
+      }
+      if (e.ctrlKey && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) {
+        e.preventDefault();
+        if (canRedo) void redo();
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [canUndo, canRedo, undo, redo]);
 
   return (
     <div className="flex flex-col gap-1 h-full">
@@ -69,6 +111,18 @@ export default function ImageEditorContainer() {
           pendingEdit={pendingEdit}
           isMutating={isMutating}
           onChange={setPendingEdit}
+        />
+      </div>
+      <div>
+        <EditHistory
+          history={history}
+          redoStack={redoStack}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          isUndoing={isUndoing}
+          isRedoing={isRedoing}
+          onUndo={() => void undo()}
+          onRedo={() => void redo()}
         />
       </div>
       <div className="h-[100px]">
