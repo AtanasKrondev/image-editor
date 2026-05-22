@@ -1,15 +1,29 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import useSWR from 'swr';
-import { fetchImages, IMAGES_KEY } from '@/services/api';
+import useSWRMutation from 'swr/mutation';
+import { fetchImages, editImage, IMAGES_KEY } from '@/services/api';
 import ImageLibrary from '@/components/ImageLibrary';
 import ImagePreview from '@/components/ImagePreview';
-import type { Image } from '@/types';
+import ToolPanel from '@/components/ToolPanel';
+import type { Image, PendingEdit } from '@/types';
+
+function toApiArgs(edit: NonNullable<PendingEdit>) {
+  switch (edit.tool) {
+    case 'rotate':  return { action: 'rotate',  parameters: { angle: edit.angle } };
+    case 'flip':    return { action: 'flip',    parameters: { direction: edit.direction } };
+    case 'blur':    return { action: 'blur',    parameters: { sigma: edit.sigma } };
+    case 'sharpen': return { action: 'sharpen', parameters: { sigma: edit.sigma } };
+    case 'resize':  return { action: 'resize',  parameters: { width: edit.width, height: edit.height } };
+    case 'crop':    return { action: 'crop',    parameters: { x: edit.x, y: edit.y, width: edit.width, height: edit.height } };
+  }
+}
 
 export default function ImageEditorContainer() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [previewVersions, setPreviewVersions] = useState<Record<string, number>>({});
+  const [pendingEdit, setPendingEdit] = useState<PendingEdit>(null);
   const { data: images, isLoading, mutate } = useSWR<Image[]>(IMAGES_KEY, fetchImages);
 
   const displayedImage =
@@ -17,17 +31,42 @@ export default function ImageEditorContainer() {
       ? (images.find((img) => img.id === selectedId) ?? images[0])
       : null;
 
+  useEffect(() => {
+    setPendingEdit(null);
+  }, [displayedImage?.id]);
+
+  const { trigger, isMutating } = useSWRMutation(
+    displayedImage?.id ?? null,
+    async (id: string, { arg }: { arg: { action: string; parameters: Record<string, unknown> } }) => {
+      await editImage(id, arg.action, arg.parameters);
+    }
+  );
+
+  async function handleApply(imageId: string, resolved: PendingEdit) {
+    if (!resolved) return;
+    const { action, parameters } = toApiArgs(resolved);
+    await trigger({ action, parameters });
+    mutate();
+    setPreviewVersions((prev) => ({ ...prev, [imageId]: (prev[imageId] ?? 0) + 1 }));
+    setPendingEdit(null);
+  }
+
   return (
     <div className="flex flex-col gap-1 h-full">
-      <div className="h-[calc(100vh-120px)]">
+      <div className="flex-1 min-h-0">
         <ImagePreview
           key={displayedImage?.id ?? 'none'}
           image={displayedImage}
           isLoading={isLoading}
-          onEdit={(imageId) => {
-            mutate();
-            setPreviewVersions((prev) => ({ ...prev, [imageId]: (prev[imageId] ?? 0) + 1 }));
-          }}
+          pendingEdit={pendingEdit}
+          isMutating={isMutating}
+          onApply={handleApply}
+        />
+      </div>
+      <div>
+        <ToolPanel
+          image={displayedImage}
+          onChange={setPendingEdit}
         />
       </div>
       <div className="h-[100px]">
