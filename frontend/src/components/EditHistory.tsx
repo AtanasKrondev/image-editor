@@ -9,7 +9,8 @@ function abbrev(action: string, parameters: string): string {
   try {
     const p = JSON.parse(parameters);
     if (action === 'blur') return `σ${p.sigma}`;
-    if (action === 'sharpen') return p.sigma != null ? `σ${p.sigma}` : 'sharpen';
+    if (action === 'sharpen')
+      return p.sigma != null ? `σ${p.sigma}` : 'sharpen';
     if (action === 'rotate') return `${p.angle}°`;
     if (action === 'flip') return p.direction === 'horizontal' ? 'H' : 'V';
     if (action === 'resize') return `${p.width}×${p.height}`;
@@ -67,15 +68,6 @@ export default function EditHistory({
       {hasItems ? (
         <ScrollArea className="flex-1">
           <div className="flex items-center gap-1 pb-1">
-            {[...history].reverse().map((entry) => (
-              <span
-                key={entry.id}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-muted text-xs whitespace-nowrap"
-              >
-                <span className="font-medium">{entry.action}</span>
-                <span className="text-muted-foreground">{abbrev(entry.action, entry.parameters)}</span>
-              </span>
-            ))}
             {redoStack.map((entry, i) => (
               <span
                 key={`redo-${i}`}
@@ -83,6 +75,17 @@ export default function EditHistory({
               >
                 <span className="font-medium">{entry.action}</span>
                 <span>{abbrev(entry.action, entry.parameters)}</span>
+              </span>
+            ))}
+            {[...history].reverse().map((entry) => (
+              <span
+                key={entry.id}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-muted text-xs whitespace-nowrap"
+              >
+                <span className="font-medium">{entry.action}</span>
+                <span className="text-muted-foreground">
+                  {abbrev(entry.action, entry.parameters)}
+                </span>
               </span>
             ))}
           </div>

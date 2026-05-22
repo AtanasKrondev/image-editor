@@ -1,12 +1,10 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, forwardRef, useImperativeHandle } from 'react';
 import ReactCrop, { type Crop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
-import { getPreviewUrl, getDownloadUrl } from '@/services/api';
+import { getPreviewUrl } from '@/services/api';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Button, buttonVariants } from '@/components/ui/button';
-import { Download } from 'lucide-react';
 import type { Image, PendingEdit } from '@/types';
 
 function formatBytes(bytes: number): string {
@@ -18,7 +16,10 @@ function formatBytes(bytes: number): string {
 function buildPreviewStyle(edit: PendingEdit): React.CSSProperties {
   if (!edit) return {};
   if (edit.tool === 'rotate') {
-    return { transform: `rotate(${edit.angle}deg)`, transition: 'transform 0.2s' };
+    return {
+      transform: `rotate(${edit.angle}deg)`,
+      transition: 'transform 0.2s',
+    };
   }
   if (edit.tool === 'flip') {
     const scale = edit.direction === 'horizontal' ? 'scaleX(-1)' : 'scaleY(-1)';
@@ -30,26 +31,30 @@ function buildPreviewStyle(edit: PendingEdit): React.CSSProperties {
   if (edit.tool === 'sharpen') {
     const c = (1 + edit.sigma * 0.2).toFixed(2);
     const s = (1 + edit.sigma * 0.1).toFixed(2);
-    return { filter: `contrast(${c}) saturate(${s})`, transition: 'filter 0.1s' };
+    return {
+      filter: `contrast(${c}) saturate(${s})`,
+      transition: 'filter 0.1s',
+    };
   }
   return {};
 }
 
-export default function ImagePreview({
-  image,
-  isLoading,
-  pendingEdit,
-  isMutating,
-  version = 0,
-  onApply,
-}: {
-  image: Image | null;
-  isLoading?: boolean;
-  pendingEdit: PendingEdit;
-  isMutating?: boolean;
-  version?: number;
-  onApply?: (imageId: string, resolved: PendingEdit) => void;
-}) {
+export type ImagePreviewHandle = { handleApply: () => Promise<void> };
+
+const ImagePreview = forwardRef<
+  ImagePreviewHandle,
+  {
+    image: Image | null;
+    isLoading?: boolean;
+    pendingEdit: PendingEdit;
+    isMutating?: boolean;
+    version?: number;
+    onApply?: (imageId: string, resolved: PendingEdit) => void;
+  }
+>(function ImagePreview(
+  { image, isLoading, pendingEdit, isMutating, version = 0, onApply },
+  ref,
+) {
   const [cacheKey, setCacheKey] = useState(version);
   const [waitingForReload, setWaitingForReload] = useState(false);
 
@@ -58,20 +63,18 @@ export default function ImagePreview({
     setPrevVersion(version);
     setCacheKey((k) => k + 1);
   }
-  const [cropRect, setCropRect] = useState<Crop>({ unit: '%', x: 0, y: 0, width: 50, height: 50 });
+  const [cropRect, setCropRect] = useState<Crop>({
+    unit: '%',
+    x: 0,
+    y: 0,
+    width: 50,
+    height: 50,
+  });
   const imgRef = useRef<HTMLImageElement>(null);
 
-  const isCropMode = pendingEdit?.tool === 'crop';
+  useImperativeHandle(ref, () => ({ handleApply }));
 
-  const hasPendingChanges = (() => {
-    if (!pendingEdit) return false;
-    if (pendingEdit.tool === 'rotate') return pendingEdit.angle % 360 !== 0;
-    if (pendingEdit.tool === 'blur') return pendingEdit.sigma > 0;
-    if (pendingEdit.tool === 'sharpen') return pendingEdit.sigma > 0;
-    if (pendingEdit.tool === 'resize') return pendingEdit.width > 0 && pendingEdit.height > 0;
-    if (pendingEdit.tool === 'crop') return cropRect.width > 0 && cropRect.height > 0;
-    return true;
-  })();
+  const isCropMode = pendingEdit?.tool === 'crop';
 
   async function handleApply() {
     if (!image || !pendingEdit || isMutating) return;
@@ -145,26 +148,10 @@ export default function ImagePreview({
               imgEl
             )}
           </div>
-
-          <div className="flex justify-center gap-2">
-            <Button
-              size="sm"
-              onClick={handleApply}
-              disabled={!hasPendingChanges || isMutating || waitingForReload}
-            >
-              {isMutating || waitingForReload ? 'Applying…' : 'Apply'}
-            </Button>
-            <a
-              href={getDownloadUrl(image.id)}
-              download
-              className={buttonVariants({ variant: 'outline', size: 'sm' })}
-            >
-              <Download className="size-4" />
-              Download
-            </a>
-          </div>
         </div>
       )}
     </div>
   );
-}
+});
+
+export default ImagePreview;

@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import useSWR from 'swr';
 import useSWRMutation from 'swr/mutation';
 import { fetchImages, editImage, IMAGES_KEY } from '@/services/api';
 import ImageLibrary from '@/components/ImageLibrary';
-import ImagePreview from '@/components/ImagePreview';
+import ImagePreview, { type ImagePreviewHandle } from '@/components/ImagePreview';
 import ToolPanel from '@/components/ToolPanel';
 import EditHistory from '@/components/EditHistory';
 import { useEditHistory } from '@/hooks/useEditHistory';
@@ -26,6 +26,7 @@ export default function ImageEditorContainer() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [previewVersions, setPreviewVersions] = useState<Record<string, number>>({});
   const [pendingEdit, setPendingEdit] = useState<PendingEdit>(null);
+  const imagePreviewRef = useRef<ImagePreviewHandle>(null);
   const { data: images, isLoading, mutate } = useSWR<Image[]>(IMAGES_KEY, fetchImages);
 
   const displayedImage =
@@ -100,10 +101,20 @@ export default function ImageEditorContainer() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [canUndo, canRedo, handleUndo, handleRedo]);
 
+  const hasPendingChanges = (() => {
+    if (!pendingEdit) return false;
+    if (pendingEdit.tool === 'rotate') return pendingEdit.angle % 360 !== 0;
+    if (pendingEdit.tool === 'blur') return pendingEdit.sigma > 0;
+    if (pendingEdit.tool === 'sharpen') return pendingEdit.sigma > 0;
+    if (pendingEdit.tool === 'resize') return pendingEdit.width > 0 && pendingEdit.height > 0;
+    return true;
+  })();
+
   return (
     <div className="flex flex-col gap-1 h-full">
       <div className="flex-1 min-h-0">
         <ImagePreview
+          ref={imagePreviewRef}
           key={displayedImage?.id ?? 'none'}
           image={displayedImage}
           isLoading={isLoading}
@@ -118,6 +129,8 @@ export default function ImageEditorContainer() {
           image={displayedImage}
           pendingEdit={pendingEdit}
           isMutating={isMutating}
+          hasPendingChanges={hasPendingChanges}
+          onApply={() => void imagePreviewRef.current?.handleApply()}
           onChange={setPendingEdit}
         />
       </div>

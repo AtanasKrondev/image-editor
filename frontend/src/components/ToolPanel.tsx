@@ -5,27 +5,44 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { RotateCcw, RotateCw, FlipHorizontal, FlipVertical, Droplets, Sparkles, Maximize, Crop } from 'lucide-react';
+import {
+  RotateCcw,
+  RotateCw,
+  FlipHorizontal,
+  FlipVertical,
+  Droplets,
+  Sparkles,
+  Maximize,
+  Crop,
+  Check,
+  Download,
+} from 'lucide-react';
+import { getDownloadUrl } from '@/services/api';
+import { buttonVariants } from '@/components/ui/button';
 import type { Image, PendingEdit, ToolName } from '@/types';
 
 const TOOLS: { name: ToolName; label: string; icon: React.ReactNode }[] = [
-  { name: 'rotate',  label: 'Rotate',  icon: <RotateCw className="size-4" /> },
-  { name: 'flip',    label: 'Flip',    icon: <FlipHorizontal className="size-4" /> },
-  { name: 'blur',    label: 'Blur',    icon: <Droplets className="size-4" /> },
+  { name: 'rotate', label: 'Rotate', icon: <RotateCw className="size-4" /> },
+  { name: 'flip', label: 'Flip', icon: <FlipHorizontal className="size-4" /> },
+  { name: 'blur', label: 'Blur', icon: <Droplets className="size-4" /> },
   { name: 'sharpen', label: 'Sharpen', icon: <Sparkles className="size-4" /> },
-  { name: 'resize',  label: 'Resize',  icon: <Maximize className="size-4" /> },
-  { name: 'crop',    label: 'Crop',    icon: <Crop className="size-4" /> },
+  { name: 'resize', label: 'Resize', icon: <Maximize className="size-4" /> },
+  { name: 'crop', label: 'Crop', icon: <Crop className="size-4" /> },
 ];
 
 export default function ToolPanel({
   image,
   pendingEdit,
   isMutating,
+  hasPendingChanges,
+  onApply,
   onChange,
 }: {
   image: Image | null;
   pendingEdit: PendingEdit;
   isMutating?: boolean;
+  hasPendingChanges: boolean;
+  onApply: () => void;
   onChange: (edit: PendingEdit) => void;
 }) {
   const [activeTool, setActiveTool] = useState<ToolName | null>(null);
@@ -57,7 +74,11 @@ export default function ToolPanel({
     } else if (tool === 'sharpen') {
       onChange({ tool: 'sharpen', sigma: 1 });
     } else if (tool === 'resize') {
-      onChange({ tool: 'resize', width: image?.width ?? 0, height: image?.height ?? 0 });
+      onChange({
+        tool: 'resize',
+        width: image?.width ?? 0,
+        height: image?.height ?? 0,
+      });
     } else {
       onChange(null);
     }
@@ -100,7 +121,7 @@ export default function ToolPanel({
   }
 
   return (
-    <div className="flex flex-col gap-2 p-2 border rounded-lg bg-background">
+    <div className="flex flex-col gap-2 p-2 border rounded-lg bg-background min-h-22.5">
       <div className="flex gap-1 flex-wrap">
         {TOOLS.map(({ name, label, icon }) => (
           <Button
@@ -108,32 +129,70 @@ export default function ToolPanel({
             variant="outline"
             size="sm"
             disabled={!image}
-            className={cn(activeTool === name && 'bg-accent text-accent-foreground')}
+            className={cn(
+              activeTool === name && 'bg-accent text-accent-foreground',
+            )}
             onClick={() => selectTool(name)}
           >
             {icon}
             {label}
           </Button>
         ))}
+        <div className="ml-auto flex gap-1">
+          <Button
+            size="sm"
+            disabled={!hasPendingChanges || isMutating}
+            onClick={onApply}
+          >
+            <Check className="size-4" />
+            Apply
+          </Button>
+          {image && (
+            <a
+              href={getDownloadUrl(image.id)}
+              download
+              className={buttonVariants({ variant: 'outline', size: 'sm' })}
+            >
+              <Download className="size-4" />
+              Download
+            </a>
+          )}
+        </div>
       </div>
 
       {activeTool === 'rotate' && (
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" disabled={isMutating} onClick={() => rotateBy(-90)}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isMutating}
+            onClick={() => rotateBy(-90)}
+          >
             <RotateCcw className="size-4" />
             Left
           </Button>
-          <Button variant="outline" size="sm" disabled={isMutating} onClick={() => rotateBy(90)}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isMutating}
+            onClick={() => rotateBy(90)}
+          >
             <RotateCw className="size-4" />
             Right
           </Button>
-          <span className="text-sm text-muted-foreground">{displayedAngle}°</span>
+          <span className="text-sm text-muted-foreground">
+            {displayedAngle}°
+          </span>
         </div>
       )}
 
       {activeTool === 'flip' && (
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => flip('horizontal')}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => flip('horizontal')}
+          >
             <FlipHorizontal className="size-4" />
             Horizontal
           </Button>
@@ -155,7 +214,9 @@ export default function ToolPanel({
             onValueChange={onBlurChange}
             className="flex-1"
           />
-          <span className="text-sm text-muted-foreground w-8">{blurSigma.toFixed(1)}</span>
+          <span className="text-sm text-muted-foreground w-8">
+            {blurSigma.toFixed(1)}
+          </span>
         </div>
       )}
 
@@ -170,7 +231,9 @@ export default function ToolPanel({
             onValueChange={onSharpenChange}
             className="flex-1"
           />
-          <span className="text-sm text-muted-foreground w-8">{sharpenSigma.toFixed(1)}</span>
+          <span className="text-sm text-muted-foreground w-8">
+            {sharpenSigma.toFixed(1)}
+          </span>
         </div>
       )}
 
@@ -197,7 +260,9 @@ export default function ToolPanel({
       )}
 
       {activeTool === 'crop' && (
-        <p className="text-sm text-muted-foreground">Drag on the image to select the crop area.</p>
+        <p className="text-sm text-muted-foreground">
+          Drag on the image to select the crop area.
+        </p>
       )}
     </div>
   );
