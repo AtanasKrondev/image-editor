@@ -1,7 +1,11 @@
 'use client';
 
-import { getPreviewUrl } from '@/services/api';
+import { useState } from 'react';
+import useSWRMutation from 'swr/mutation';
+import { getPreviewUrl, editImage } from '@/services/api';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { RotateCcw, RotateCw } from 'lucide-react';
 import type { Image } from '@/types';
 
 function formatBytes(bytes: number): string {
@@ -13,10 +17,34 @@ function formatBytes(bytes: number): string {
 export default function ImagePreview({
   image,
   isLoading,
+  onEdit,
 }: {
   image: Image | null;
   isLoading?: boolean;
+  onEdit?: (imageId: string) => void;
 }) {
+  const [cacheKey, setCacheKey] = useState(0);
+  const [pendingAngle, setPendingAngle] = useState(0);
+  const [waitingForReload, setWaitingForReload] = useState(false);
+
+  const { trigger, isMutating } = useSWRMutation(
+    image?.id ?? null,
+    async (id: string, { arg }: { arg: { angle: number } }) => {
+      await editImage(id, 'rotate', { angle: arg.angle });
+    }
+  );
+
+  async function apply() {
+    if (!image) return;
+    const normalizedAngle = ((pendingAngle % 360) + 360) % 360;
+    await trigger({ angle: normalizedAngle });
+    setWaitingForReload(true);
+    setCacheKey((k) => k + 1);
+    onEdit?.(image.id);
+  }
+
+  const hasPendingChanges = pendingAngle % 360 !== 0;
+
   return (
     <div className="h-full">
       {isLoading && <Skeleton className="w-full aspect-video rounded-lg" />}
@@ -45,12 +73,46 @@ export default function ImagePreview({
           </div>
           <div className="flex justify-center items-center bg-muted aspect-video overflow-hidden">
             <img
-              src={getPreviewUrl(image.id)}
+              src={getPreviewUrl(image.id, cacheKey)}
               alt={image.original_filename}
               className="max-w-full max-h-full object-contain"
+              style={{
+                transform: `rotate(${pendingAngle}deg)`,
+                transition: 'transform 0.2s',
+              }}
+              onLoad={() => {
+                if (waitingForReload) {
+                  setPendingAngle(0);
+                  setWaitingForReload(false);
+                }
+              }}
             />
           </div>
-          <div>edit controls</div>
+          <div className="flex justify-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPendingAngle((a) => a - 90)}
+            >
+              <RotateCcw data-icon="inline-start" />
+              Rotate Left
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPendingAngle((a) => a + 90)}
+            >
+              <RotateCw data-icon="inline-start" />
+              Rotate Right
+            </Button>
+            <Button
+              size="sm"
+              onClick={apply}
+              disabled={!hasPendingChanges || isMutating || waitingForReload}
+            >
+              Apply
+            </Button>
+          </div>
         </div>
       )}
     </div>

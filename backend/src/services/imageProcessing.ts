@@ -42,13 +42,13 @@ export async function applyHistory(
   history: Array<{ action: string; parameters: string }>,
   outputFormat?: keyof sharp.FormatEnum,
 ): Promise<Buffer> {
-  let pipeline = sharp(filePath);
+  let buffer = await sharp(filePath).toBuffer();
   for (const entry of history) {
     const params = JSON.parse(entry.parameters) as Record<string, unknown>;
-    pipeline = applyEdit(pipeline, entry.action, params);
+    buffer = await applyEdit(sharp(buffer), entry.action, params).toBuffer();
   }
   if (outputFormat) {
-    pipeline = pipeline.toFormat(outputFormat);
+    return sharp(buffer).toFormat(outputFormat).toBuffer();
   }
-  return pipeline.toBuffer();
+  return buffer;
 }

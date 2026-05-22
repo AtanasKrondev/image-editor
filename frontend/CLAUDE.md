@@ -12,7 +12,7 @@ This Next.js version may contain breaking changes. APIs, conventions, and file s
 - **Framework:** Next.js v15+ (App Router)
 - **Styling:** Tailwind CSS v4 (CSS-based config), ShadcnUI
 - **State Management:** React Context (undo/redo)
-- **HTTP Client:** Fetch API + SWR (data fetching / cache revalidation)
+- **HTTP Client:** SWR — use for all API calls (reads and mutations)
 
 ## Structure
 
@@ -58,6 +58,14 @@ Test files:
 - `src/hooks/useEditHistory.test.ts` — unit tests for undo/redo logic: add entries, undo, redo, clear history
 
 No component tests — UI is verified manually. Only the hook contains pure logic worth isolating.
+
+## SWR Usage
+
+- **All API calls must go through SWR** — no raw `fetch` calls outside of SWR fetchers
+- **Data fetching:** `useSWR(key, fetcher)` — reads, polling, cache revalidation
+- **Mutations:** `useSWRMutation(key, fetcher)` — writes (POST/PATCH/DELETE); gives `trigger`, `isMutating`, `error`
+- After a mutation succeeds, revalidate related queries by calling `mutate(key)` or passing `revalidate: true` to the mutation options
+- All fetcher functions live in `src/services/api.ts`
 
 ## Notes
 

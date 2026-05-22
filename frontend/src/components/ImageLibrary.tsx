@@ -13,14 +13,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Card, CardContent } from '@/components/ui/card';
 import { AlertCircleIcon, UploadIcon } from 'lucide-react';
+import ImageThumbnail from '@/components/ImageThumbnail';
 import type { Image } from '@/types';
 
 export default function ImageLibrary({
   onSelect,
+  previewVersions,
 }: {
   onSelect?: (image: Image) => void;
+  previewVersions?: Record<string, number>;
 }) {
   const [uploadOpen, setUploadOpen] = useState(false);
   const {
@@ -81,11 +83,7 @@ export default function ImageLibrary({
                   onClick={() => onSelect?.(img)}
                   className="w-[100px] h-[100px] rounded-lg border border-border overflow-hidden bg-muted hover:shadow-lg transition-shadow cursor-pointer flex-shrink-0"
                 >
-                  <img
-                    src={getPreviewUrl(img.id)}
-                    alt={img.original_filename}
-                    className="w-full h-full object-cover"
-                  />
+                  <ImageThumbnail id={img.id} alt={img.original_filename} version={previewVersions?.[img.id]} />
                 </div>
               ))}
             </div>

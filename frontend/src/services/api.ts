@@ -18,6 +18,20 @@ export async function uploadImages(files: File[]): Promise<Image[]> {
   return res.json()
 }
 
-export function getPreviewUrl(id: string): string {
-  return `${BASE}/images/${id}/preview`
+export function getPreviewUrl(id: string, cacheBuster?: number): string {
+  const url = `${BASE}/images/${id}/preview`
+  return cacheBuster !== undefined ? `${url}?t=${cacheBuster}` : url
+}
+
+export async function editImage(
+  id: string,
+  action: string,
+  parameters: Record<string, unknown>
+): Promise<void> {
+  const res = await fetch(`${BASE}/images/${id}/edit`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, parameters }),
+  })
+  if (!res.ok) throw new Error('Edit failed')
 }
