@@ -54,7 +54,7 @@ export default function EditHistory({
       <Button
         variant="outline"
         size="sm"
-        disabled={!canUndo || busy || hasPending}
+        disabled={!canUndo || busy}
         onClick={onUndo}
         title="Undo (Ctrl+Z)"
       >
@@ -64,7 +64,7 @@ export default function EditHistory({
       <Button
         variant="outline"
         size="sm"
-        disabled={!canRedo || busy || hasPending}
+        disabled={!canRedo || busy}
         onClick={onRedo}
         title="Redo (Ctrl+Y)"
       >

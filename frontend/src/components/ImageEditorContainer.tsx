@@ -101,7 +101,6 @@ export default function ImageEditorContainer() {
     function onKeyDown(e: KeyboardEvent) {
       const tag = (e.target as HTMLElement).tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-      if (pendingUndoRedo) return;
       if (e.ctrlKey && !e.shiftKey && e.key === 'z') {
         e.preventDefault();
         if (canUndo) void handleUndo();
@@ -113,7 +112,7 @@ export default function ImageEditorContainer() {
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [canUndo, canRedo, pendingUndoRedo, handleUndo, handleRedo]);
+  }, [canUndo, canRedo, handleUndo, handleRedo]);
 
   return (
     <div className="flex flex-col gap-1 h-full">
