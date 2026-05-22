@@ -11,6 +11,15 @@ export interface Image {
   updated_at: string
 }
 
+export interface EditHistoryEntry {
+  id: string
+  image_id: string
+  action: string
+  parameters: string
+  sequence: number
+  created_at: string
+}
+
 export type ToolName = 'rotate' | 'flip' | 'blur' | 'sharpen' | 'resize' | 'crop';
 
 export type PendingEdit =
