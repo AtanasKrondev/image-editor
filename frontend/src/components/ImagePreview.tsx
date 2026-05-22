@@ -49,10 +49,9 @@ export default function ImagePreview({
   version?: number;
   onApply?: (imageId: string, resolved: PendingEdit) => void;
 }) {
-  const [cacheKey, setCacheKey] = useState(0);
+  const [cacheKey, setCacheKey] = useState(version);
   const [waitingForReload, setWaitingForReload] = useState(false);
 
-  // Bump cacheKey whenever version changes (driven by parent after apply/undo/redo)
   const [prevVersion, setPrevVersion] = useState(version);
   if (prevVersion !== version) {
     setPrevVersion(version);
