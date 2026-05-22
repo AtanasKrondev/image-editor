@@ -131,6 +131,26 @@ Data is persisted in named Docker volumes (`uploads` for image files, `data` for
 
 ---
 
+## Environment Variables
+
+### Backend (`backend/.env`)
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `NODE_ENV` | `development` | Runtime environment. Accepted values: `development`, `production`, `test`. |
+| `PORT` | `5000` | Port the Express server listens on. |
+| `DATABASE_URL` | `file:./data/images.db` | Prisma SQLite connection string. Prisma falls back to `file:./data/images.db` if unset, but the app-level Zod validation treats it as required and will crash on startup if missing — set it explicitly. |
+| `UPLOAD_DIR` | `./uploads` | Directory where uploaded original images are stored. |
+| `MAX_FILE_SIZE` | `52428800` | Maximum upload size in bytes (default is 50 MB). |
+
+### Frontend (`frontend/.env`)
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `NEXT_PUBLIC_API_BASE_URL` | `http://localhost:5000/api` | Public URL of the backend API, used by browser-side fetchers. The `NEXT_PUBLIC_` prefix is required by Next.js to expose it to the client bundle. |
+
+---
+
 ## Known Issues
 
 - **Sharpen** — the preview does not accurately reflect the final output; the downloaded image may look different from what is shown.
