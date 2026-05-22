@@ -19,17 +19,22 @@ const TOOLS: { name: ToolName; label: string; icon: React.ReactNode }[] = [
 
 export default function ToolPanel({
   image,
+  pendingEdit,
+  isMutating,
   onChange,
 }: {
   image: Image | null;
+  pendingEdit: PendingEdit;
+  isMutating?: boolean;
   onChange: (edit: PendingEdit) => void;
 }) {
   const [activeTool, setActiveTool] = useState<ToolName | null>(null);
-  const [angle, setAngle] = useState(0);
   const [blurSigma, setBlurSigma] = useState(2);
   const [sharpenSigma, setSharpenSigma] = useState(1);
   const [resizeWidth, setResizeWidth] = useState('');
   const [resizeHeight, setResizeHeight] = useState('');
+
+  const displayedAngle = pendingEdit?.tool === 'rotate' ? pendingEdit.angle : 0;
 
   function selectTool(tool: ToolName) {
     if (activeTool === tool) {
@@ -38,7 +43,6 @@ export default function ToolPanel({
       return;
     }
     setActiveTool(tool);
-    setAngle(0);
     setBlurSigma(2);
     setSharpenSigma(1);
     setResizeWidth(image ? String(image.width) : '');
@@ -60,9 +64,7 @@ export default function ToolPanel({
   }
 
   function rotateBy(delta: number) {
-    const next = angle + delta;
-    setAngle(next);
-    onChange({ tool: 'rotate', angle: next });
+    onChange({ tool: 'rotate', angle: displayedAngle + delta });
   }
 
   function flip(direction: 'horizontal' | 'vertical') {
@@ -117,15 +119,15 @@ export default function ToolPanel({
 
       {activeTool === 'rotate' && (
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => rotateBy(-90)}>
+          <Button variant="outline" size="sm" disabled={isMutating} onClick={() => rotateBy(-90)}>
             <RotateCcw className="size-4" />
             Left
           </Button>
-          <Button variant="outline" size="sm" onClick={() => rotateBy(90)}>
+          <Button variant="outline" size="sm" disabled={isMutating} onClick={() => rotateBy(90)}>
             <RotateCw className="size-4" />
             Right
           </Button>
-          <span className="text-sm text-muted-foreground">{angle}°</span>
+          <span className="text-sm text-muted-foreground">{displayedAngle}°</span>
         </div>
       )}
 

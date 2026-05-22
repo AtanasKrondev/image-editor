@@ -66,6 +66,8 @@ export default function ImageEditorContainer() {
       <div>
         <ToolPanel
           image={displayedImage}
+          pendingEdit={pendingEdit}
+          isMutating={isMutating}
           onChange={setPendingEdit}
         />
       </div>
