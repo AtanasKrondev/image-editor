@@ -67,7 +67,7 @@ export default function EditHistory({
       {hasItems ? (
         <ScrollArea className="flex-1">
           <div className="flex items-center gap-1 pb-1">
-            {history.map((entry) => (
+            {[...history].reverse().map((entry) => (
               <span
                 key={entry.id}
                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-muted text-xs whitespace-nowrap"
